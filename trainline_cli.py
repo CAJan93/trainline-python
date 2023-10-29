@@ -32,7 +32,21 @@ from datetime import datetime, timedelta
     show_default=True,
 )
 @click.option(
-    '--transport', '-t',
+    '--fromtime', '-f',
+    type=str,
+    help='date from which to search in format dd.mm.yyyy:HH.MM',
+    default=None,
+    show_default=True,
+)
+@click.option(
+    '--totime', '-t',
+    type=str,
+    help='date to which to search in format dd.mm.yyyy:HH.MM',
+    default=None,
+    show_default=True,
+)
+@click.option(
+    '--transport', '-r',
     type=click.Choice(['train', 'coach', 'any']),
     help='get only results for the selected transportation mean',
     default='train',
@@ -43,7 +57,8 @@ from datetime import datetime, timedelta
     is_flag=True,
     help='verbose mode',
 )
-def main(departure, arrival, next, transport, verbose):
+
+def main(departure, arrival, next, transport, verbose, fromtime, totime):
     """ Search trips with Trainline and returns it in csv """
 
     # Get current datetime > from_date
@@ -54,6 +69,11 @@ def main(departure, arrival, next, transport, verbose):
 
     # Calculate the end date > to_date
     to_date_obj = from_date_obj + delta
+
+    # overwrite default behavior if you specify from and to params 
+    if fromtime is not None and totime is not None: 
+        from_date_obj = _decode_date_param(fromtime)
+        to_date_obj = _decode_date_param(totime)
 
     # Convert the datetime objects to strings
     from_date = from_date_obj.strftime("%d/%m/%Y %H:%M")
@@ -80,6 +100,16 @@ def main(departure, arrival, next, transport, verbose):
         print()
         print("{} results".format(len(results)))
 
+
+def _decode_date_param(date_param: str): 
+    """ Get time delate from date 
+    """
+    date = date_param.split(':')[0]
+    time = date_param.split(':')[1]
+    s = list(map(lambda x: int(x), date.split(".")))
+    t = list(map(lambda x: int(x), time.split(".")))
+    dt = datetime(year=s[2], month=s[1], day=s[0], hour=t[0], minute=t[1])
+    return dt
 
 def _decode_next_param(next_param):
         """ From a 'next' string, returns a timedelta object
